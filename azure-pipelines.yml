@@ -6,12 +6,12 @@ pool:
 
 steps:
 - script: |
-    echo "Installing httpie and HMAC plugin..."
-    pip install --upgrade httpie httpie-hmac-auth
-
-    echo "Testing Veracode API Connectivity..."
-    http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getapplist.do"
-  displayName: 'Test Veracode API Connectivity'
+    echo "Testing Veracode API Connectivity using cURL..."
+    curl -H "Authorization: VERACODE-HMAC" \
+         -H "User-Agent: AzureDevOpsPipeline" \
+         --user "$VERACODE_API_KEY_ID:$VERACODE_API_KEY_SECRET" \
+         "https://analysiscenter.veracode.com/api/5.0/getapplist.do"
+  displayName: 'Test Veracode API Connectivity with cURL'
   env:
     VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
     VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
