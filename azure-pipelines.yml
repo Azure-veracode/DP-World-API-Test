@@ -1,11 +1,14 @@
 trigger:
-- main
+  - main
 
 pool:
   vmImage: ubuntu-latest
 
 steps:
 - script: |
+    echo "Installing httpie..."
+    sudo apt-get update && sudo apt-get install -y httpie
+
     echo "Testing Veracode API Connectivity..."
     http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getapplist.do"
   displayName: 'Test Veracode API Connectivity'
