@@ -7,7 +7,7 @@ pool:
 variables:
   VERACODE_API_KEY_ID: $(VID)
   VERACODE_API_KEY_SECRET: $(VKEY)
-  App ID: 2456453
+  App ID: "2456453"
 
 steps:
   - task: UsePythonVersion@0
@@ -75,7 +75,7 @@ steps:
       echo "========================================"
       echo " Step 7: Fetching Veracode Build ID for Specific Application"
       echo "========================================"
-      APP_ID="YOUR_APPLICATION_ID"
+      APP_ID="2456453"
 
       echo "Fetching build list for App ID: $APP_ID"
       http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getbuildlist.do?app_id=$APP_ID"
