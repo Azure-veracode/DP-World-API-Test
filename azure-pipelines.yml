@@ -1,8 +1,8 @@
 trigger:
-  - main
+- main
 
 pool:
-  name: "azureagent"
+  vmImage: ubuntu-latest
 
 steps:
 - script: |
