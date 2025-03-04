@@ -5,8 +5,8 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
-  VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
+  VERACODE_API_KEY_ID: $(VID)
+  VERACODE_API_KEY_SECRET: $(VKEY)
 
 steps:
   - task: UsePythonVersion@0
@@ -42,23 +42,23 @@ steps:
       echo "========================================"
       echo " Step 5: Checking Environment Variables"
       echo "========================================"
-      if [[ -z "$VERACODE_API_KEY_ID" ]]; then
-        echo "ERROR: VERACODE_API_KEY_ID is not set or empty."
+      if [[ -z "$VID" ]]; then
+        echo "ERROR: VKEY is not set or empty."
         exit 1
       else
-        echo "VERACODE_API_KEY_ID is set and has length: ${#VERACODE_API_KEY_ID}"
+        echo "VERACODE_API_KEY_ID is set and has length: ${#VID}"
       fi
 
       if [[ -z "$VERACODE_API_KEY_SECRET" ]]; then
         echo "ERROR: VERACODE_API_KEY_SECRET is not set or empty."
         exit 1
       else
-        echo "VERACODE_API_KEY_SECRET is set and has length: ${#VERACODE_API_KEY_SECRET}"
+        echo "VERACODE_API_KEY_SECRET is set and has length: ${#VKEY}"
       fi
     displayName: 'Check Environment Variables'
     env:
-      VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
-      VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
+      VERACODE_API_KEY_ID: $(VID)
+      VERACODE_API_KEY_SECRET: $(VKEY)
 
   - script: |
       echo "========================================"
@@ -67,8 +67,8 @@ steps:
       http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getapplist.do"
     displayName: 'Check Veracode API Connectivity'
     env:
-      VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
-      VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
+      VERACODE_API_KEY_ID: $(VID)
+      VERACODE_API_KEY_SECRET: $(VKEY)
 
   - script: |
       echo "========================================"
@@ -80,5 +80,5 @@ steps:
       http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getbuildlist.do?app_id=$APP_ID"
     displayName: 'Get Veracode Build ID'
     env:
-      VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
-      VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
+      VERACODE_API_KEY_ID: $(VID)
+      VERACODE_API_KEY_SECRET: $(VKEY)
