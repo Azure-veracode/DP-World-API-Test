@@ -1,0 +1,14 @@
+trigger:
+  - main
+
+pool:
+  name: "azureagent"
+
+steps:
+- script: |
+    echo "Testing Veracode API Connectivity..."
+    http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getapplist.do"
+  displayName: 'Test Veracode API Connectivity'
+  env:
+    VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
+    VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
