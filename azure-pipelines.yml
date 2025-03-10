@@ -80,11 +80,15 @@ steps:
       EOF
       )
 
+      echo "Payload Sent: $analysis_payload"
+
       response=$(curl -s -X POST "https://api.veracode.com/was/configservice/v1/analyses?scan_type=API_SCAN" \
       -H "Content-Type: application/json" \
       -H "Authorization: Veracode-HMAC" \
-      -u "$(VID):$(VKEY)" \
+      -u "$VERACODE_API_KEY_ID:$VERACODE_API_KEY_SECRET" \
       -d "$analysis_payload")
+
+      echo "API Response: $response"
 
       analysis_id=$(echo "$response" | jq -r '.analysis_id')
 
