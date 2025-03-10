@@ -1,13 +1,13 @@
 trigger:
-  - master
+  - master  # Change to your branch if needed
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  VERACODE_API_KEY_ID: $(VID)
+  VERACODE_API_KEY_ID: $(VID)  # Fetch from Azure DevOps secrets
   VERACODE_API_KEY_SECRET: $(VKEY)
-  App ID: "2435840"
+  TARGET_URL: "https://www.example.com"  # Replace with your live API URL
 
 steps:
   - task: UsePythonVersion@0
@@ -17,45 +17,34 @@ steps:
 
   - script: |
       echo "========================================"
-      echo " Step 1: Updating package lists"
+      echo " Step 1: Installing Dependencies"
       echo "========================================"
       sudo apt-get update -y
-
-      echo "========================================"
-      echo " Step 2: Installing required dependencies"
-      echo "========================================"
-      sudo apt-get install -y python3 python3-pip curl unzip
-
-      echo "========================================"
-      echo " Step 3: Installing HTTPie, HMAC Auth Plugin, and Veracode API Signing"
-      echo "========================================"
+      sudo apt-get install -y python3 python3-pip curl jq
       pip install --upgrade httpie httpie-hmac-auth veracode-api-signing requests
 
       echo "========================================"
-      echo " Step 4: Verifying Python & Package Installations"
+      echo " Step 2: Verifying Installations"
       echo "========================================"
       python3 --version
       pip list | grep -E 'httpie|veracode-api-signing'
-
     displayName: 'Install Dependencies'
 
   - script: |
       echo "========================================"
-      echo " Step 5: Checking Environment Variables"
+      echo " Step 3: Checking API Credentials"
       echo "========================================"
       if [[ -z "$VID" ]]; then
-        echo "ERROR: VKEY is not set or empty."
+        echo "ERROR: VID (Veracode API Key ID) is not set!"
         exit 1
-      else
-        echo "VERACODE_API_KEY_ID is set and has length: ${#VID}"
       fi
 
-      if [[ -z "$VERACODE_API_KEY_SECRET" ]]; then
-        echo "ERROR: VERACODE_API_KEY_SECRET is not set or empty."
+      if [[ -z "$VKEY" ]]; then
+        echo "ERROR: VKEY (Veracode API Key Secret) is not set!"
         exit 1
-      else
-        echo "VERACODE_API_KEY_SECRET is set and has length: ${#VKEY}"
       fi
+
+      echo "✅ Veracode API Credentials found!"
     displayName: 'Check Environment Variables'
     env:
       VERACODE_API_KEY_ID: $(VID)
@@ -63,23 +52,50 @@ steps:
 
   - script: |
       echo "========================================"
-      echo " Step 6: Fetching Veracode Application List"
+      echo " Step 4: Creating Veracode Dynamic Scan"
       echo "========================================"
-      http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getapplist.do"
-    displayName: 'Check Veracode API Connectivity'
-    env:
-      VERACODE_API_KEY_ID: $(VID)
-      VERACODE_API_KEY_SECRET: $(VKEY)
 
-  - script: |
-      echo "========================================"
-      echo " Step 7: Fetching Veracode Build ID for Specific Application"
-      echo "========================================"
-      APP_ID="2435840"
+      analysis_payload=$(cat <<EOF
+      {
+        "name": "AzureDevOps-API-DynamicScan",
+        "scans": [
+          {
+            "action_type": "ADD",
+            "scan_config_request": {
+              "target_url": {
+                "url": "$(TARGET_URL)"
+              }
+            }
+          }
+        ],
+        "schedule": {
+          "duration": {
+            "length": 2,
+            "unit": "DAY"
+          },
+          "now": true,
+          "schedule_status": "ACTIVE"
+        }
+      }
+      EOF
+      )
 
-      echo "Fetching build list for App ID: $APP_ID"
-      http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getbuildlist.do?app_id=$APP_ID"
-    displayName: 'Get Veracode Build ID'
+      response=$(curl -s -X POST "https://api.veracode.com/was/configservice/v1/analyses?scan_type=API_SCAN" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Veracode-HMAC" \
+      -u "$(VID):$(VKEY)" \
+      -d "$analysis_payload")
+
+      analysis_id=$(echo "$response" | jq -r '.analysis_id')
+
+      if [[ -z "$analysis_id" || "$analysis_id" == "null" ]]; then
+        echo "❌ Error: Failed to trigger Dynamic Scan"
+        exit 1
+      fi
+
+      echo "✅ Triggered Veracode Dynamic Scan with ID: $analysis_id"
+      echo "##vso[task.setvariable variable=ANALYSIS_ID]$analysis_id"
+    displayName: 'Trigger Veracode Dynamic Scan'
     env:
       VERACODE_API_KEY_ID: $(VID)
       VERACODE_API_KEY_SECRET: $(VKEY)
