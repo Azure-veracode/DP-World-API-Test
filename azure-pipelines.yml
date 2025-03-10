@@ -1,13 +1,14 @@
 trigger:
-  - master  # Change to your branch if needed
+  - master  # Adjust to your desired branch
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  VID: $(VID)  # Fetch from Azure DevOps secrets
-  VKEY: $(VKEY)
-  TARGET_URL: "https://c628-2001-8f8-1761-1599-6839-8b3a-2c59-5ea4.ngrok-free.app/"  # Replace with your live API URL
+  VERACODE_API_KEY_ID: $(VID)  # Set these in Azure DevOps pipeline secrets
+  VERACODE_API_KEY_SECRET: $(VKEY)
+  TARGET_URL: "https://www.example.com"  # Replace with your target URL
+  ANALYSIS_NAME: "DynamicAnalysis-$(Build.BuildId)"  # Unique analysis name
 
 steps:
   - task: UsePythonVersion@0
@@ -32,49 +33,45 @@ steps:
 
   - script: |
       echo "========================================"
-      echo " Step 3: Debugging API Credentials"
+      echo " Step 3: Validating API Credentials"
       echo "========================================"
 
-      echo "VID Variable Length: ${#VID}"
-      echo "VKEY Variable Length: ${#VKEY}"
-
-      if [[ -z "$VID" ]]; then
-        echo "❌ ERROR: VID (Veracode API Key ID) is not set!"
+      if [[ -z "$VERACODE_API_KEY_ID" ]]; then
+        echo "❌ ERROR: VERACODE_API_KEY_ID is not set!"
         exit 1
       fi
 
-      if [[ -z "$VKEY" ]]; then
-        echo "❌ ERROR: VKEY (Veracode API Key Secret) is not set!"
+      if [[ -z "$VERACODE_API_KEY_SECRET" ]]; then
+        echo "❌ ERROR: VERACODE_API_KEY_SECRET is not set!"
         exit 1
       fi
 
       echo "✅ Veracode API Credentials are set!"
-    displayName: 'Check & Debug Environment Variables'
+    displayName: 'Validate API Credentials'
     env:
-      VID: $(VID)
-      VKEY: $(VKEY)
+      VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
+      VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
 
   - script: |
       echo "========================================"
-      echo " Step 4: Creating Veracode Dynamic Scan"
+      echo " Step 4: Creating Veracode Dynamic Analysis"
       echo "========================================"
 
       analysis_payload=$(cat <<EOF
       {
-        "name": "AzureDevOps-API-DynamicScan",
+        "name": "$ANALYSIS_NAME",
         "scans": [
           {
-            "action_type": "ADD",
             "scan_config_request": {
               "target_url": {
-                "url": "$(TARGET_URL)"
+                "url": "$TARGET_URL"
               }
             }
           }
         ],
         "schedule": {
           "duration": {
-            "length": 2,
+            "length": 1,
             "unit": "DAY"
           },
           "now": true,
@@ -86,24 +83,23 @@ steps:
 
       echo "Payload Sent: $analysis_payload"
 
-      response=$(curl -s -X POST "https://api.veracode.com/was/configservice/v1/analyses?scan_type=API_SCAN" \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Veracode-HMAC" \
-      -u "$VID:$VKEY" \
-      -d "$analysis_payload")
+      response=$(http --auth-type=veracode_hmac \
+        POST "https://api.veracode.com/was/configservice/v1/analyses" \
+        Content-Type:application/json \
+        <<< "$analysis_payload")
 
       echo "API Response: $response"
 
       analysis_id=$(echo "$response" | jq -r '.analysis_id')
 
       if [[ -z "$analysis_id" || "$analysis_id" == "null" ]]; then
-        echo "❌ Error: Failed to trigger Dynamic Scan"
+        echo "❌ Error: Failed to trigger Dynamic Analysis"
         exit 1
       fi
 
-      echo "✅ Triggered Veracode Dynamic Scan with ID: $analysis_id"
+      echo "✅ Triggered Veracode Dynamic Analysis with ID: $analysis_id"
       echo "##vso[task.setvariable variable=ANALYSIS_ID]$analysis_id"
-    displayName: 'Trigger Veracode Dynamic Scan'
+    displayName: 'Trigger Veracode Dynamic Analysis'
     env:
-      VID: $(VID)
-      VKEY: $(VKEY)
+      VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
+      VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
