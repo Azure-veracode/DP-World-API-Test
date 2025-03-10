@@ -1,0 +1,85 @@
+# trigger:
+#   - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  VERACODE_API_KEY_ID: $(VID)
+  VERACODE_API_KEY_SECRET: $(VKEY)
+  App ID: "2435840"
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+    displayName: 'Use Python 3.x'
+
+  - script: |
+      echo "========================================"
+      echo " Step 1: Updating package lists"
+      echo "========================================"
+      sudo apt-get update -y
+
+      echo "========================================"
+      echo " Step 2: Installing required dependencies"
+      echo "========================================"
+      sudo apt-get install -y python3 python3-pip curl unzip
+
+      echo "========================================"
+      echo " Step 3: Installing HTTPie, HMAC Auth Plugin, and Veracode API Signing"
+      echo "========================================"
+      pip install --upgrade httpie httpie-hmac-auth veracode-api-signing requests
+
+      echo "========================================"
+      echo " Step 4: Verifying Python & Package Installations"
+      echo "========================================"
+      python3 --version
+      pip list | grep -E 'httpie|veracode-api-signing'
+
+    displayName: 'Install Dependencies'
+
+  - script: |
+      echo "========================================"
+      echo " Step 5: Checking Environment Variables"
+      echo "========================================"
+      if [[ -z "$VID" ]]; then
+        echo "ERROR: VKEY is not set or empty."
+        exit 1
+      else
+        echo "VERACODE_API_KEY_ID is set and has length: ${#VID}"
+      fi
+
+      if [[ -z "$VERACODE_API_KEY_SECRET" ]]; then
+        echo "ERROR: VERACODE_API_KEY_SECRET is not set or empty."
+        exit 1
+      else
+        echo "VERACODE_API_KEY_SECRET is set and has length: ${#VKEY}"
+      fi
+    displayName: 'Check Environment Variables'
+    env:
+      VERACODE_API_KEY_ID: $(VID)
+      VERACODE_API_KEY_SECRET: $(VKEY)
+
+  - script: |
+      echo "========================================"
+      echo " Step 6: Fetching Veracode Application List"
+      echo "========================================"
+      http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getapplist.do"
+    displayName: 'Check Veracode API Connectivity'
+    env:
+      VERACODE_API_KEY_ID: $(VID)
+      VERACODE_API_KEY_SECRET: $(VKEY)
+
+  - script: |
+      echo "========================================"
+      echo " Step 7: Fetching Veracode Build ID for Specific Application"
+      echo "========================================"
+      APP_ID="2435840"
+
+      echo "Fetching build list for App ID: $APP_ID"
+      http --auth-type=veracode_hmac --ignore-stdin "https://analysiscenter.veracode.com/api/5.0/getbuildlist.do?app_id=$APP_ID"
+    displayName: 'Get Veracode Build ID'
+    env:
+      VERACODE_API_KEY_ID: $(VID)
+      VERACODE_API_KEY_SECRET: $(VKEY)
