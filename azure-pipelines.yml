@@ -30,25 +30,25 @@ steps:
       pip list | grep -E 'httpie|veracode-api-signing'
     displayName: 'Install Dependencies'
 
-  - script: |
-      echo "========================================"
-      echo " Step 3: Checking API Credentials"
-      echo "========================================"
-      if [[ -z "$VID" ]]; then
-        echo "ERROR: VID (Veracode API Key ID) is not set!"
-        exit 1
-      fi
+  # - script: |
+  #     echo "========================================"
+  #     echo " Step 3: Checking API Credentials"
+  #     echo "========================================"
+  #     if [[ -z "$VID" ]]; then
+  #       echo "ERROR: VID (Veracode API Key ID) is not set!"
+  #       exit 1
+  #     fi
 
-      if [[ -z "$VKEY" ]]; then
-        echo "ERROR: VKEY (Veracode API Key Secret) is not set!"
-        exit 1
-      fi
+  #     if [[ -z "$VKEY" ]]; then
+  #       echo "ERROR: VKEY (Veracode API Key Secret) is not set!"
+  #       exit 1
+  #     fi
 
-      echo "✅ Veracode API Credentials found!"
-    displayName: 'Check Environment Variables'
-    env:
-      VERACODE_API_KEY_ID: $(VID)
-      VERACODE_API_KEY_SECRET: $(VKEY)
+  #     echo "✅ Veracode API Credentials found!"
+  #   displayName: 'Check Environment Variables'
+  #   env:
+  #     VERACODE_API_KEY_ID: $(VID)
+  #     VERACODE_API_KEY_SECRET: $(VKEY)
 
   - script: |
       echo "========================================"
