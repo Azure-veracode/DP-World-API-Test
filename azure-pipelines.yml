@@ -7,7 +7,7 @@ pool:
 variables:
   VERACODE_API_KEY_ID: $(VID)  # Fetch from Azure DevOps secrets
   VERACODE_API_KEY_SECRET: $(VKEY)
-  TARGET_URL: "https://www.example.com"  # Replace with your live API URL
+  TARGET_URL: "https://c628-2001-8f8-1761-1599-6839-8b3a-2c59-5ea4.ngrok-free.app/"  # Replace with your live API URL
 
 steps:
   - task: UsePythonVersion@0
