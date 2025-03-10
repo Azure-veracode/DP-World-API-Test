@@ -7,7 +7,7 @@ pool:
 variables:
   VERACODE_API_KEY_ID: $(VID)  # Set these in Azure DevOps pipeline secrets
   VERACODE_API_KEY_SECRET: $(VKEY)
-  TARGET_URL: "https://www.example.com"  # Replace with your target URL
+  TARGET_URL: "https://juice-shop.herokuapp.com/#/"  # Replace with your target URL
   ANALYSIS_NAME: "DynamicAnalysis-$(Build.BuildId)"  # Unique analysis name
 
 steps:
@@ -80,26 +80,3 @@ steps:
       }
       EOF
       )
-
-      echo "Payload Sent: $analysis_payload"
-
-      response=$(http --auth-type=veracode_hmac \
-        POST "https://api.veracode.com/was/configservice/v1/analyses" \
-        Content-Type:application/json \
-        <<< "$analysis_payload")
-
-      echo "API Response: $response"
-
-      analysis_id=$(echo "$response" | jq -r '.analysis_id')
-
-      if [[ -z "$analysis_id" || "$analysis_id" == "null" ]]; then
-        echo "❌ Error: Failed to trigger Dynamic Analysis"
-        exit 1
-      fi
-
-      echo "✅ Triggered Veracode Dynamic Analysis with ID: $analysis_id"
-      echo "##vso[task.setvariable variable=ANALYSIS_ID]$analysis_id"
-    displayName: 'Trigger Veracode Dynamic Analysis'
-    env:
-      VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
-      VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
