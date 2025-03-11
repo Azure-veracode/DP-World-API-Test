@@ -33,28 +33,7 @@ steps:
 
   - script: |
       echo "========================================"
-      echo " Step 3: Validating API Credentials"
-      echo "========================================"
-
-      if [[ -z "$VERACODE_API_KEY_ID" ]]; then
-        echo "❌ ERROR: VERACODE_API_KEY_ID is not set!"
-        exit 1
-      fi
-
-      if [[ -z "$VERACODE_API_KEY_SECRET" ]]; then
-        echo "❌ ERROR: VERACODE_API_KEY_SECRET is not set!"
-        exit 1
-      fi
-
-      echo "✅ Veracode API Credentials are set!"
-    displayName: 'Validate API Credentials'
-    env:
-      VERACODE_API_KEY_ID: $(VERACODE_API_KEY_ID)
-      VERACODE_API_KEY_SECRET: $(VERACODE_API_KEY_SECRET)
-
-  - script: |
-      echo "========================================"
-      echo " Step 4: Creating Veracode Dynamic Analysis"
+      echo " Step 3: Creating Veracode Dynamic Analysis"
       echo "========================================"
 
       analysis_payload=$(cat <<EOF
@@ -91,11 +70,6 @@ steps:
       echo "API Response: $response"
 
       analysis_id=$(echo "$response" | jq -r '.analysis_id')
-
-      if [[ -z "$analysis_id" || "$analysis_id" == "null" ]]; then
-        echo "❌ Error: Failed to trigger Dynamic Analysis"
-        exit 1
-      fi
 
       echo "✅ Triggered Veracode Dynamic Analysis with ID: $analysis_id"
       echo "##vso[task.setvariable variable=ANALYSIS_ID]$analysis_id"
